@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.orgz.dao.SocietyMapper">
+	<resultMap type="com.orgz.domain.Society" id="societyMap">
+		<id property="societyId" column="society_id" />
+		<result property="societyName" column="society_name" />
+		<result property="societyIcon" column="society_icon" />
+		<result property="property" column="property" />
+		<result property="introduce" column="introduce" />
+		<result property="createTime" column="create_time" />
+		<result property="activityCount" column="activity_count" />
+		<result property="status" column="status" />
+		<result property="school" column="school" />
+		<result property="peopleCount" column="people_count" />
+		<result property="province" column="province" />
+		<result property="city" column="city" />
+		<result property="district" column="district" />
+		<result property="address" column="address" />
+		<result property="tags" column="tags" />
+		<result property="publishTime" column="publish_time" />
+		<result property="joinFlag" column="join_flag"/>
+		<association property="founder" javaType="com.orgz.domain.User">
+			<id property="userId" column="user_id" />
+			<result property="userName" column="user_name" />
+			<result property="email" column="email" />
+			<result property="phoneNumber" column="phone_number" />
+			<result property="userSign" column="user_sign" />
+			<result property="sex" column="sex" />
+			<result property="userIcon" column="user_icon" />
+			<!-- <result property="regtime" column="regtime" />
+			<result property="latelyTime" column="lately_time" />
+			<result property="address" column="user_address" />
+			<result property="verifycode" column="verifycode" />
+			<result property="postTime" column="post_time" />
+			<result property="province" column="province" />
+			<result property="city" column="city" />
+			<result property="district" column="district" /> -->
+		</association>
+	</resultMap>
+	<select id="selectSocietyById" parameterType="hashmap" resultMap="societyMap">
+		SELECT
+			soc.*, u.user_name,
+			u.email,
+			u.phone_number,
+			u.user_sign,
+			u.sex,
+			u.user_icon,
+			us.user_id AS join_flag
+		FROM
+			(society soc, user u)
+			LEFT JOIN user_society us ON soc.society_id = us.society_id
+		AND us.user_id = #{userId}
+		WHERE
+			soc.society_id = #{societyId}
+			AND soc.user_id = u.user_id
+	</select>
+
+	<select id="selectSocietyByUserId" parameterType="int"
+		resultMap="societyMap">
+		<!-- select s.society_id, s.society_name, s.property, s.introduce, s.create_time,s.activity_count, 
+			s.status, s.school, s.people_count from society as s, user_society as us 
+			where us.user_id = #{id} and us.society_id = s.society_id and us.property 
+			= 1 -->
+		select * from society where user_id = #{userId}
+	</select>
+
+	<!-- 查找自己创建或加入的社团 -->
+	<select id="findAllByUserId" parameterType="int" resultMap="societyMap">
+		SELECT
+		soc.*,
+		us.user_id as join_flag
+		FROM
+		society soc
+		LEFT JOIN user_society us ON us.society_id = soc.society_id and us.user_id= #{id}
+		where soc.user_id = #{id} or us.user_id = #{id}
+		ORDER BY
+		us.user_id ASC
+
+	</select>
+	<!-- 推荐用户的热门社团 (30天里发布活动最多的社团)-->
+	<select id="findHot" resultMap="societyMap">
+		SELECT DISTINCT soc.* ,u.user_name, u.sex
+		FROM society soc INNER JOIN user u on soc.user_id = u.user_id, activity act 
+		WHERE act.society_id = soc.society_id AND 30 >= to_days(now()) - to_days(act.publish_time) 
+		ORDER BY soc.activity_count DESC, soc.people_count DESC 
+		LIMIT 0,3
+	</select>
+	<!-- 查找人数社团活动数与人数最多的 -->
+	<select id="findCountMax" resultMap="societyMap">
+		SELECT DISTINCT soc.* ,u.user_name, u.sex
+		FROM (society as soc INNER JOIN user as u on soc.user_id = u.user_id) LEFT JOIN activity as act ON  act.society_id = soc.society_id
+		order by soc.activity_count desc, soc.people_count DESC
+		LIMIT 0, 3
+	</select>
+	<!-- 查找自己加入的社团 -->
+	<select id="findAllJionByUserId" parameterType="int" resultMap="societyMap">
+		SELECT
+			soc.*, us.user_id AS join_flag
+		FROM
+			society soc,
+			user_society us
+		WHERE
+			soc.society_id = us.society_id
+		AND us.user_id = #{id}
+	</select>
+	<!-- 根据用户Id查找创建的社团 -->
+	<select id="findByUserId" parameterType="int" resultMap="societyMap">
+		select *
+		from society where user_id = #{id}
+	</select>
+	<!-- 根据条件分页展示所有社团 -->
+	<select id="listSociety" parameterType="com.orgz.condition.SearchConditonOfSociety" resultMap="societyMap">
+		SELECT
+			soc.*, u.user_name,
+			u.email,
+			u.phone_number,
+			u.user_icon,
+			u.user_sign,
+			u.sex,
+			us.user_id AS join_flag
+		FROM
+			(society soc, user u)
+		LEFT JOIN user_society us ON us.society_id = soc.society_id
+		AND us.user_id = #{userId}
+		WHERE
+			u.user_id = soc.user_id
+		<if test="property == 0 or property == 1">
+			and soc.property = #{property}
+		</if>
+		<if test="status == 0 or status == 1 or status == 2">
+			and soc.status = #{status}
+		</if>
+		<if test="societyName != null and societyName != ''">
+			and soc.society_name like  concat('%',#{societyName},'%')
+		</if>
+		<if test="city != null and city != ''">
+			and soc.city like concat('%',#{city},'%')
+		</if>
+		<if test="tags != null and tags != ''">
+			and tags like  concat('%',#{tags},'%')
+		</if>
+		order by soc.people_count desc, soc.activity_count desc 
+		<if test="start >= 0 and size >0">
+			limit #{start}, #{size}
+		</if>
+		
+	</select>
+	<!-- 通过条件查找官方或者个人社团数 -->
+	<select id="societyCount" parameterType="com.orgz.condition.SearchConditonOfSociety" resultMap="societyMap">
+		select * from society 
+		<where>
+			<if test="property == 0 or property == 1">
+				property = #{property}
+			</if>
+				<if test="status == 0 or status == 1 or status == 2">
+				status = #{status}
+			</if>
+		</where>
+	</select>
+	<!-- 这里设置了自动增长，而且把自动增长得到的值赋给society的societyId属性列 -->
+	<insert id="insertSociety" parameterType="com.orgz.domain.Society"
+		useGeneratedKeys="true" keyProperty="societyId">
+		insert into society(society_name,
+		property, introduce, status, school, province, city, district,
+		address, society_icon, user_id)
+		values(#{societyName}, #{property},
+		#{introduce}, #{status}, #{school}, #{province},
+		#{city}, #{district},
+		#{address}, #{societyIcon}, #{founder.userId} )
+	</insert>
+
+	<update id="updateStatus" parameterType="hashmap">
+		update society set
+		status = #{status} where society_id = #{id}
+	</update>
+	<update id="updatePeopleCount" parameterType="int">
+		update society set
+		people_count = (people_count + 1) where society_id = #{id}
+	</update>
+	<update id="updatePeopleCountReduce" parameterType="int">
+		update society set
+		people_count = (people_count - 1) where society_id = #{id}
+	</update>
+	<update id="updateActivityCount" parameterType="int">
+		update society
+		set activity_count = (activity_count + 1) where society_id = #{id}
+	</update>
+	<update id="updateActivityCountReduce" parameterType="int">
+		update society
+		set activity_count = (activity_count - 1) where society_id = #{id}
+	</update>
+	<update id="updateSociety" parameterType="com.orgz.domain.Society" >
+		update society set 
+		introduce = #{introduce}
+		<if test="societyName != null and societyName !=''">
+			,society_name = #{societyName}
+		</if>
+		<if test="property == 0 or property == 1">
+			,property = #{property}
+		</if>
+		<if test="tags != null and tags != ''">
+			,tags = #{tags}
+		</if>
+		where society_id = #{societyId}
+	</update>
+	<update id="batchUpdateStatus" parameterType="hashmap">
+		update society set status = #{status} where society_id in   
+		<foreach item="id" collection="ids" open="(" separator="," close=")" >
+			#{id}
+		</foreach>
+	</update>
+</mapper>

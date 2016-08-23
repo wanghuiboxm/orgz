@@ -1,0 +1,50 @@
+package com.orgz.service;
+
+import java.util.List;
+
+import com.orgz.condition.SearchConditonOfSociety;
+import com.orgz.domain.PageBean;
+import com.orgz.domain.Society;
+import com.orgz.domain.User;
+
+public interface SocietyService {
+	/*
+	 * 根据社团id查找社团,并根据userId判断该用户是否加入该社团
+	 */
+	public Society findSocietyById(int societyId, int userId);
+	public int createOfficialSociety(Society society, User user);
+	int createPersonalSociety(Society society, User user);
+	/**
+	 * 审核社团
+	 * @param id
+	 * @param status 0代表通过  1代表正在审核 2代表不通过
+	 * @return
+	 */
+	public int checkPass(int id, int status);
+	/**
+	 *  查找用户创建或加入的社团
+	 * @param userId
+	 * @return
+	 */
+	public List<Society> findAllByUserId(int userId);
+	/**
+	 * 查找用户加入的社团
+	 * @param userId
+	 * @return
+	 */
+	public List<Society> findAllJionByUserId(int userId);
+	/**
+	 * 查找用户创建的社团
+	 * @param userId
+	 * @return
+	 */
+	public List<Society> findByUserId(int userId);
+	public List<Society> findHot();
+	public int updatePeopleCount(int societyId);
+	public int updatePeopleCountReduce(int societyId);
+	public int updateActivityCount(int societyId);
+	public int updateActivityCountReduce(int societyId);
+	public PageBean getPageBean(SearchConditonOfSociety sc,int numPerPage, int pageNum);
+	public int updateSociety(Society society);
+	public int batchUpdateStatus(int[] ids, int status);
+}

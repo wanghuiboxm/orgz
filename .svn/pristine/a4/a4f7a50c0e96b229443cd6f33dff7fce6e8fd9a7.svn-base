@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.orgz.dao.UserMapper">
+	<resultMap type="com.orgz.domain.User" id="userMap">
+		<id property="userId" column="user_id"/>
+		<result property="userName" column="user_name"/>
+		<result property="password" column="password"/>
+		<result property="phoneNumber" column="phone_number"/>
+		<result property="userIcon" column="user_icon" />
+		<result property="userSign" column="user_sign"/>
+		<result property="sex" column="sex"/>
+		<result property="regtime" column="regtime"/>
+		<result property="latelyTime" column="lately_time"/>
+		<result property="verifycode" column="verifycode"/>
+		<result property="postTime" column="post_time"/>
+		<result property="province" column="provice"/>
+		<result property="city" column="city"/>
+		<result property="district" column="district"/>
+		<result property="address" column="address"/>
+		<result property="friendFlag" column="friend_flag"/>
+	</resultMap>
+	
+	<select id="findUserById" parameterType="int" resultMap="userMap">
+		select * from user where user_id = #{id}
+	</select>
+	<select id="findUserByIdWithCheck" parameterType="hashmap" resultMap="userMap">
+		SELECT
+			u.*, f.user_id AS friend_flag
+		FROM
+			user u
+		LEFT JOIN friend f ON f.friend_user_id = #{checkUserId}
+		AND f.user_id = #{userId}
+		WHERE
+			u.user_id = #{checkUserId}
+	</select>
+	<select id="findUserByPhoneNumber" parameterType="String" resultMap="userMap">
+		select * from user where phone_number = #{phoneNumber}
+	</select>
+	<select id="findUserByEmail" parameterType="String" resultMap="userMap">
+		select * from user where email = #{email}
+	</select>
+	<select id="validateUserById" parameterType="com.orgz.domain.User" resultMap="userMap">
+		select * from user where user_id = #{userId} and password = #{password}
+	</select>
+	<select id="validateUserByEmail" parameterType="com.orgz.domain.User" resultMap="userMap" >
+		select * from user where email = #{email} and password = #{password}
+	</select>
+	<select id="validateUserByPhoneNumber" parameterType="com.orgz.domain.User" resultMap="userMap">
+		select * from user where phone_number = #{phoneNumber} and password = #{password}
+	</select>
+	<!-- 条件分页查找用户 ,不显示管理员-->
+	<select id="listUser" parameterType="com.orgz.condition.SearchConditionOfUser" resultMap="userMap">
+		SELECT
+			u.*, f.user_id AS friend_flag
+		FROM
+			user u
+		LEFT JOIN friend f ON f.friend_user_id = u.user_id
+		AND f.user_id = #{userId}
+		<where>
+			u.user_id not in(select user_id from admin)
+			<if test="sex == 0 or sex == 1">
+				and u.sex = #{sex}
+			</if>
+			<if test="keyword != null and keyword != ''">
+				and (u.user_name like concat('%',#{keyword},'%') 
+				or u.email like concat('%',#{keyword},'%') 
+				or u.phone_number like concat('%',#{keyword},'%'))
+			</if>
+			
+		</where>
+		 order by u.regtime 
+		 <if test="start >= 0 and size >0">
+			limit #{start}, #{size}
+		</if>
+	</select>
+	<select id="userCount" resultType="int">
+		select count(*) from user
+	</select>
+	<insert id="insertUser" parameterType="com.orgz.domain.User" useGeneratedKeys="true" keyProperty="userId">
+		insert into user(user_name, email, phone_number, password, sex) values(#{userName}, #{email}, #{phoneNumber}, #{password}, #{sex})
+	</insert>
+	<update id="updateLatelyTime" parameterType="int">
+		update user set lately_time = CURRENT_TIMESTAMP where user_id = #{id}
+	</update>
+	<update id="updateUser" parameterType="com.orgz.domain.User">
+		update user set user.regtime = user.regtime
+		<if test="userName != null and userName != ''">
+			, user_name = #{userName}
+		</if>
+		<if test="sex == 0 or sex == 1">
+			, sex = #{sex}
+		</if>
+		<if test="userSign != null and userSign != ''">
+			, user_sign = #{userSign}
+		</if>
+		<if test="userIcon != null and userIcon != ''">
+			, user_icon = #{userIcon}
+		</if>
+		<if test="password != null and password != ''">
+			, password = #{password}
+		</if>
+		where user_id = #{userId}
+	</update>
+</mapper>

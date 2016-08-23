@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration 
+    PUBLIC "-//mybatis.org//DTDConfig 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-config.dtd">
+ 
+ <configuration>
+	<!-- <properties resource="jdbc.properties" />  -->
+	<typeAliases>
+		<typeAlias type="com.orgz.domain.User" alias="User"/>
+	</typeAliases> 
+	<!-- <environments default="development">
+		<environment id="development1">
+			<transactionManager type="JDBC"></transactionManager>
+			<dataSource type="POOLED">
+				<property name="driver" value="${driverClass}"/>
+				<property name="url" value="${jdbcUrl}"/>
+				<property name="username" value="${user}"/>
+				<property name="password" value="${password}"/>
+			</dataSource>
+		</environment>
+	</environments>  -->
+	<mappers>
+		<mapper resource="com/orgz/tables/xml/UserMapper.xml"/>
+		<mapper resource="com/orgz/tables/xml/ActivityMapper.xml" />
+		<mapper resource="com/orgz/tables/xml/ActPraiseMapper.xml"/>
+		<mapper resource="com/orgz/tables/xml/UserActivityStoreMapper.xml"/>
+		<mapper resource="com/orgz/tables/xml/DiscussMapper.xml"/>
+		<mapper resource="com/orgz/tables/xml/FriendMapper.xml"/>
+		<mapper resource="com/orgz/tables/xml/MesPraiseMapper.xml"/>
+		<mapper resource="com/orgz/tables/xml/MessageMapper.xml"/>
+		<mapper resource="com/orgz/tables/xml/NewsMapper.xml"/>
+		<mapper resource="com/orgz/tables/xml/ReplyMapper.xml"/>
+		<mapper resource="com/orgz/tables/xml/SocietyMapper.xml"/>
+		<mapper resource="com/orgz/tables/xml/UserSocietyMapper.xml"/>
+		<mapper resource="com/orgz/tables/xml/AdminMapper.xml"/>
+		<mapper resource="com/orgz/tables/xml/VersionMapper.xml"/>
+	</mappers>
+ </configuration>

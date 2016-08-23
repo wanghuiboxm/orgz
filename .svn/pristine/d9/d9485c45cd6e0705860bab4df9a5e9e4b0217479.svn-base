@@ -1,0 +1,59 @@
+package com.orgz.service;
+
+import java.util.Iterator;
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import com.orgz.base.SearchConditonOfSociety;
+import com.orgz.dao.UserSocietyDao;
+import com.orgz.domain.Society;
+import com.orgz.domain.User;
+import com.orgz.domain.UserSociety;
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations={ "classpath:applicationContext.xml"})
+public class SocietyServiceTest {
+	
+	@Resource
+	SocietyService societyService;
+	@Resource
+	UserSocietyDao userSocietyDao;
+	@Test
+	public void findSocietyById(){
+//		Society society = societyService.findSocietyById(1);
+//		System.out.println(society.getIntroduce());
+//		List<Society> list = societyService.findSocietyByUserId(7);
+//		for(Society s:list){
+//			System.out.println(s.getSocietyId()+"****"+s.getIntroduce());
+//		}
+		Society society = new Society();
+		society.setSocietyName("生活部");
+		society.setIntroduce("华中师范大学生活部");
+		society.setProperty(1);
+		society.setSchool("华中师范大学");
+		society.setStatus(1);
+		society.setProvince("湖北省");
+		society.setCity("武汉市");
+		society.setDistrict("洪山区");
+		society.setAddress("湖北省武汉市洪山区华中师范大学");
+		User user = new User();
+		user.setUserId(1);
+//		society.setFounder(user);
+//		System.out.println(societyService.createPersonalSociety(society, user));
+//		for(int i=0; i<100; ++i){
+//			societyService.createOfficialSociety(society, user);
+//		}
+//		UserSociety us = new UserSociety(1, 1, "我想加入", 0);
+//		userSocietyDao.insert(us);
+//		System.out.println(societyService.getPageBean(new SearchConditonOfSociety(2, 2, null, null, null, null),20, 1).getRecordList().size());
+//		System.out.println(societyService.findAllByUserId(1).size());
+		societyService.updateActivityCount(6);
+	}
+
+}

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.orgz.dao.ReplyMapper">
+	<resultMap type="com.orgz.domain.Reply" id="replyMap">
+		<id property="replyId" column="reply_id"/>
+		<result property="replyContent" column="reply_content"/>
+		<result property="replyTime" column="reply_time"/>
+		<association property="user" javaType="com.orgz.domain.User">
+			<id property="userId" column="user_id" />
+			<result property="userName" column="user_name" />
+			<result property="userIcon" column="user_icon"/>
+		</association>
+		<association property="message" javaType="com.orgz.domain.Message">
+			<id property="messageId" column="message_id"/>
+		</association>
+		<association property="parent" javaType="com.orgz.domain.Reply">
+			<id property="replyId" column="child_id"/>
+			<result property="replyContent" column="child_content"/>
+			<result property="replyTime" column="child_time"/>
+			<association property="user" javaType="com.orgz.domain.User" column="child_user_id" select="com.orgz.dao.ReplyMapper.selectUserById"></association>
+		</association>
+		<!-- 
+		<collection property="replies" ofType="com.orgz.domain.Reply">
+			<id property="replyId" column="child_id"/>
+			<result property="replyContent" column="child_content"/>
+			<result property="replyTime" column="child_time"/>
+			<association property="user" javaType="com.orgz.domain.User" column="child_user_id" select="com.orgz.dao.ReplyMapper.selectUserById"></association>
+		</collection> -->
+	</resultMap>
+	
+	<resultMap type="com.orgz.domain.User" id="discussUserMap">
+		<id property="userId" column="user_id" />
+		<result property="userName" column="user_name" />
+		<result property="userIcon" column="user_icon"/>
+	</resultMap>
+
+	<select id="selectUserById" parameterType="int" resultMap="discussUserMap">
+		select user_id, user_name from user where user_id = #{id}
+	</select>
+	
+	<select id="listReply" parameterType="com.orgz.condition.SearchConditionOfReply" resultMap="replyMap">
+		SELECT
+			rep.reply_id,
+			rep.reply_content,
+			rep.reply_time,
+			rep.message_id,
+			rep.user_id,
+			u.user_name,
+			u.user_icon,
+			child.reply_id AS child_id,
+			child.reply_content AS child_content,
+			child.reply_time AS child_time,
+			child.user_id AS child_user_id
+		FROM
+			(reply AS rep LEFT JOIN reply AS child ON rep.parent_id = child.reply_id) LEFT JOIN user AS u ON rep.user_id = u.user_id
+		where 
+			rep.message_id = #{messageId }
+		ORDER BY 
+			rep.reply_id ASC
+			<if test="start >= 0 and size >= 1">
+				limit #{start},#{size}
+			</if>
+	</select>
+	<select id="replyCount" parameterType="com.orgz.condition.SearchConditionOfReply" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			reply
+		where 
+			message_id = #{messageId }
+	</select>
+	<select id="isHasReply" parameterType="int" resultType="int">
+		select count(*) from reply where parent_id = #{id }
+	</select>
+	<select id="selectById" parameterType="int" resultMap="replyMap">
+		select * from reply where reply_id = #{id}
+	</select>
+	<insert id="insertReply" parameterType="com.orgz.domain.Reply" useGeneratedKeys="true" keyColumn="replyId">
+		insert into reply(reply_content, reply_time, message_id, user_id, parent_id)
+		values(#{replyContent}, CURRENT_TIMESTAMP, #{message.messageId}, #{user.userId}, 
+		<if test="parent != null">#{parent.replyId}</if><if test="parent == null">NULL</if>)
+	</insert>
+	
+	<delete id="deleteReply" parameterType="com.orgz.condition.SearchConditionOfReply">
+		delete from reply where 
+		<choose>
+			<when test="replyId > 0">
+				reply_id = #{replyId} or parent_id = #{replyId}
+			</when>
+			<otherwise>
+				message_id = #{messageId}
+			</otherwise>
+		</choose>
+	</delete>
+</mapper>

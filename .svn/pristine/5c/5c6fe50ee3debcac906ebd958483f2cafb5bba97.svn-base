@@ -1,0 +1,30 @@
+package com.orgz.dao;
+
+import java.util.List;
+
+import com.orgz.condition.SearchConditionOfDiscuss;
+import com.orgz.domain.Discuss;
+
+public interface DiscussDao {
+	public Discuss findById(int discussId);
+	/**
+	 * 根据条件来搜索评论
+	 * @param dc 条件
+	 * @return
+	 */
+	public List<Discuss> selectByCondition(SearchConditionOfDiscuss dc);
+	public int insertDiscuss(Discuss discuss);
+	/**
+	 * 根据条件删除评论
+	 * @param discussId
+	 * @return
+	 */
+	public int deleteByCondition(SearchConditionOfDiscuss dc);
+	public int getDiscussCount(SearchConditionOfDiscuss dc);
+	/**
+	 * 判断该评论是否被回复
+	 * @param discussId
+	 * @return
+	 */
+	public int isHasReply(int discussId);
+}

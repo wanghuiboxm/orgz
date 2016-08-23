@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.orgz.dao.NewsMapper">
+	<resultMap type="com.orgz.domain.User" id="userMap">
+		<id property="userId" column="user_id"/>
+		<result property="userName" column="user_name"/>
+		<result property="password" column="password"/>
+		<result property="phoneNumber" column="phone_number"/>
+	</resultMap>
+	
+	<select id="selectUserById" parameterType="int" resultMap="userMap">
+		select * from user where user_id = #{id}
+	</select>
+	
+	<insert id="registUserByEmail" parameterType="User">
+		insert into user(email, user_name, password) values(#{email}, #{userName},#{password})
+	</insert>
+</mapper>

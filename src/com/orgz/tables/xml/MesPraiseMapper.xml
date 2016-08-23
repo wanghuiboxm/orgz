@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.orgz.dao.MesPraiseMapper">
+	<resultMap type="com.orgz.domain.MesPraise" id="mesPraiseMap">
+		<id property="mesPraiseId" column="mespraise_id"/>
+		<result property="mesPraiseTime" column="mespraise_time"/>
+		<association property="user" javaType="com.orgz.domain.User">
+			<id property="userId" column="user_id"/>
+		</association>
+		<association property="message" javaType="com.orgz.domain.Message">
+			<id property="messageId" column="message_id"/>
+		</association>
+	</resultMap>
+	
+	<insert id="insertMesPraise" parameterType="com.orgz.domain.MesPraise" useGeneratedKeys="true" keyProperty="mesPraiseId">
+		insert into mespraise(user_id, message_id) values(#{user.userId}, #{message.messageId})
+	</insert>
+	
+	<delete id="deleteByUserIdAndMessageId" parameterType="hashmap">
+		delete from mespraise where user_id = #{userId} and message_id = #{messageId}
+	</delete>
+	
+	<delete id="deleteByMessageId" parameterType="int">
+		delete from mespraise where message_id = #{id}
+	</delete>
+	
+	<select id="selectByUserIdAndMessageId" parameterType="hashmap" resultMap="mesPraiseMap">
+		select * from mespraise where user_id = #{userId} and message_id = #{messageId}
+	</select>
+</mapper>

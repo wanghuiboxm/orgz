@@ -1,0 +1,336 @@
+package com.orgz.action;
+
+import java.util.List;
+
+import org.apache.struts2.ServletActionContext;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Controller;
+
+import com.opensymphony.xwork2.Action;
+import com.orgz.base.BaseAction;
+import com.orgz.base.SearchConditionOfActivity;
+import com.orgz.domain.Activity;
+import com.orgz.domain.Society;
+import com.orgz.lbs.service.ActivityGeoService;
+import com.orgz.lbs.service.SocietyGeoService;
+import com.orgz.utils.BeanUtils;
+import com.orgz.utils.FileUploadUtils;
+
+@Controller
+@Scope("prototype")
+public class ActivityAction extends BaseAction {
+	private static final long serialVersionUID = 1L;
+
+	private Activity activity;
+	private int societyId = -1;
+	private int userId = -1;
+	private SearchConditionOfActivity ac;
+	private int activityId;
+	
+	private String savePath = ServletActionContext.getServletContext().getRealPath("image/activity");
+	
+	//分页展示一个社团下的活动，前台，返回json,当numPerPage = -1 pageNum = -1 时，表示不分页显示，直接显示全部
+	public String show() throws Exception {
+
+		if(societyId > 0 && userId > 0){
+			//表示不分页
+			if(numPerPage == -1 && pageNum == -1) {
+				pageNum = 1;
+				numPerPage = 0;
+			} else {
+				if(numPerPage < 1){
+					//默认每页显示20条
+					numPerPage = 20;
+				}
+				if(pageNum < 1){
+					//默认显示第一页
+					pageNum = 1;
+				}
+			}
+			ac = new SearchConditionOfActivity();
+			ac.setSocietyId(societyId);
+			ac.setUserId(userId);
+			//查询
+			pages = activityService.getPageBean(ac, numPerPage, pageNum);
+			dataMap.put("status", 0);
+			dataMap.put("message", "成功");
+			dataMap.put("result", pages);
+		}else{
+			dataMap.put("status", 4);
+			dataMap.put("message", "参数错误");
+		}
+		return Action.SUCCESS;
+	}
+	
+	//创建活动
+	public String create() throws Exception {
+		if(activity != null && societyId > 0 && userId > 0){
+			if(upload != null && uploadFileName != null){
+				String fileName = FileUploadUtils.getFileName(societyId, uploadFileName);
+				FileUploadUtils.saveFile(upload, savePath, fileName);
+				//将图片保存路径赋值给活动
+				activity.setActivityPhoto("image/activity/"+fileName);
+			}
+			int id = activityService.createActivity(societyId, userId, activity);
+			activity.setActivityId(id);
+			//更新社团活动数
+			societyService.updateActivityCount(societyId);
+			//向lbs插入活动
+			threadPool.invokeMethod(ActivityGeoService.class, "insertActivityToGeo", activity, BeanUtils.copy(activityGeoService));
+			//得到更新后的社团
+			Society society = societyService.findSocietyById(societyId, 0);
+			//向lbs中更新数据
+			if(society != null){
+				threadPool.invokeMethod(SocietyGeoService.class, "updateSocietyGeo", society, BeanUtils.copy(societyGeoService));
+			}
+			System.out.println(id);
+			dataMap.put("status", 0);
+			dataMap.put("message", "成功");
+		}else {
+			dataMap.put("status", 4);
+			dataMap.put("message", "参数错误");
+		}
+		return Action.SUCCESS;
+	}
+	
+	//活动点赞
+	public String like() throws Exception {
+		if(activityId > 0 && userId > 0){
+			//查看用户是否已点赞
+			if(actpraiseService.findByUserIdAndActivityId(activityId, userId) != null){
+				dataMap.put("status", 2);
+				dataMap.put("message", "该活动您已点赞");
+			}else{
+				actpraiseService.insert(userId, activityId );
+				//更行活动点赞数
+				activityService.updateLikebutton(activityId);
+				//更新lbs
+				activity = activityService.getActivityById(activityId);
+				threadPool.invokeMethod(ActivityGeoService.class, "updateActivityGeo", activity, BeanUtils.copy(activityGeoService));
+				dataMap.put("status", 0);
+				dataMap.put("message", "成功");
+			}
+		}else{
+			dataMap.put("status", 1);
+			dataMap.put("message", "失败");
+		}
+		return Action.SUCCESS;
+	}
+	
+	//取消点赞
+	public String unlike() throws Exception {
+		if(activityId > 0 && userId > 0){
+			//删除点赞
+			int count = actpraiseService.deleteByUserIdAndActivityId(activityId, userId);
+			if(count > 0){
+				//更行活动点赞数
+				activityService.updateLikebuttonReduce(activityId);
+				//更新lbs
+				activity = activityService.getActivityById(activityId);
+				threadPool.invokeMethod(ActivityGeoService.class, "updateActivityGeo", activity, BeanUtils.copy(activityGeoService));
+				dataMap.put("status", 0);
+				dataMap.put("message", "成功");
+			}
+		}else{
+			dataMap.put("status", 1);
+			dataMap.put("message", "失败");
+		}
+		return Action.SUCCESS;
+	}
+	
+	//活动收藏
+	public String store() throws Exception {
+		if(activityId > 0 && userId > 0){
+			if(userActivityStoreService.findByUserIdAndActivityId(activityId, userId) != null){
+				dataMap.put("status", 2);
+				dataMap.put("message", "该活动您已收藏");
+			}else{
+				userActivityStoreService.insert(userId, activityId);
+				dataMap.put("status", 0);
+				dataMap.put("message", "成功");
+			}
+		}else{
+			dataMap.put("status", 1);
+			dataMap.put("message", "失败");
+		}
+		return Action.SUCCESS;
+	}
+	
+	//删除收藏
+	public String deleteStore() throws Exception {
+		if(activityId > 0 && userId > 0){
+			userActivityStoreService.deleteByActivityIdAndUserId(activityId, userId);
+			dataMap.put("status", 0);
+			dataMap.put("message", "成功");
+		}else{
+			dataMap.put("status", 1);
+			dataMap.put("message", "失败");
+		}
+		return Action.SUCCESS;
+	}
+	
+	//展示收藏的活动
+	public String listStore() throws Exception {
+		if(userId > 0){
+			List<Activity> dates = activityService.getUserStoreActivity(userId);
+			dataMap.put("status", 0);
+			dataMap.put("message", "成功");
+			dataMap.put("result", dates); 
+		}else{
+			dataMap.put("status", 1);
+			dataMap.put("message", "失败");
+		}
+		return Action.SUCCESS;
+	}
+	
+	//分页展示活动,后台
+	public String list() throws Exception {
+		if(numPerPage <= 0 ){
+			//默认显示20条记录
+			numPerPage = 20;
+		}
+		if(pageNum <= 0){
+			//默认显示第一页
+			pageNum = 1;
+		}
+		//如果没有查询条件
+		if(ac == null){
+			ac = new SearchConditionOfActivity();
+			//默认展示不分社团
+			ac.setSocietyId(-1);
+		}
+		System.out.println(ac.toString());
+		//准备数据
+		pages = activityService.getPageBean(ac, numPerPage, pageNum);
+		
+		return "list";
+	}
+
+	//创建活动界面
+	public String addUI() throws Exception {
+		
+		return "addUI";
+	}
+	
+	// 创建活动
+	public String add() throws Exception {
+		if (activity != null && activity.isMatchCodition() && societyId > 0
+				&& userId > 0) {
+			if (upload != null && uploadFileName != null) {
+				String fileName = FileUploadUtils.getFileName(societyId,
+						uploadFileName);
+				FileUploadUtils.saveFile(upload, savePath, fileName);
+				// 将图片保存路径赋值给活动
+				activity.setActivityPhoto("image/activity/" + fileName);
+			}
+			int id = activityService
+					.createActivity(societyId, userId, activity);
+			activity.setActivityId(id);
+			// 更新社团活动数
+			societyService.updateActivityCount(societyId);
+			// 向lbs插入活动
+			threadPool.invokeMethod(ActivityGeoService.class,
+					"insertActivityToGeo", activity,
+					BeanUtils.copy(activityGeoService));
+			// 得到更新后的社团
+			Society society = societyService.findSocietyById(societyId, 0);
+			// 向lbs中更新数据
+			if (society != null) {
+				threadPool.invokeMethod(SocietyGeoService.class,
+						"updateSocietyGeo", society,
+						BeanUtils.copy(societyGeoService));
+			}
+			dataMap.put("status", 200);
+			dataMap.put("message", "添加成功");
+			dataMap.put("navTabId", "activityList");
+			dataMap.put("rel", "");
+			dataMap.put("callbackType", "closeCurrent");
+			dataMap.put("forwardUrl", "");
+		} else {
+			dataMap.put("statusCode", 300);
+			dataMap.put("message", "添加失败");
+		}
+		return "jsonResult";
+	}
+		
+	//删除活动,后台
+	public String delete() throws Exception {
+		if(request.getRequestURI().startsWith("/orgz/admin/") && ac != null){
+			activity = activityService.getActivityById(ac.getActivityId());
+			if(activity != null) {
+				//1.首先删除活动下的所有评论
+				discussService.deleteByActivityId(ac.getActivityId());
+				//2.删除用户收藏的该活动记录
+				userActivityStoreService.deleteByActivityId(ac.getActivityId());
+				//3.删除该活动下的点赞
+				actpraiseService.deleteByActivityId(ac.getActivityId());
+				//4.删除活动
+				activityService.deleteActivity(ac);
+				//5.删除lbs上该活动
+				threadPool.invokeMethod(ActivityGeoService.class, "deleteActivity", activity, BeanUtils.copy(activityGeoService));
+				//6.更新社团下的活动数
+				societyService.updateActivityCountReduce(ac.getSocietyId());
+			}
+			dataMap.put("statusCode", "200");
+			dataMap.put("message", "操作成功");
+			if(flag == 0){//活动页发来
+				dataMap.put("navTabId", "activityList");
+				dataMap.put("rel", "activityList");
+				dataMap.put("callbackType", "");
+			}
+			if(flag == 1){//评论页发来请求
+				dataMap.put("navTabId", "activityList");
+				dataMap.put("rel", "activityList");
+				dataMap.put("callbackType", "closeCurrent");
+			}
+			dataMap.put("forwardUrl", "");
+			
+		}else{		
+			dataMap.put("statusCode", "300");
+			dataMap.put("message", "操作失败");
+		}
+		return "jsonResult";
+	}
+	
+
+	public Activity getActivity() {
+		return activity;
+	}
+	
+	public void setActivity(Activity activity) {
+		this.activity = activity;
+	}
+
+	public int getSocietyId() {
+		return societyId;
+	}
+
+	public void setSocietyId(int societyId) {
+		this.societyId = societyId;
+	}
+
+	public int getUserId() {
+		return userId;
+	}
+
+	public void setUserId(int userId) {
+		this.userId = userId;
+	}
+
+	public SearchConditionOfActivity getAc() {
+		return ac;
+	}
+
+	public void setAc(SearchConditionOfActivity ac) {
+		this.ac = ac;
+	}
+
+	public int getActivityId() {
+		return activityId;
+	}
+
+	public void setActivityId(int activityId) {
+		this.activityId = activityId;
+	}
+
+}

@@ -1,0 +1,219 @@
+package com.orgz.admin.action;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.struts2.ServletActionContext;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Controller;
+
+import com.opensymphony.xwork2.ActionContext;
+import com.orgz.admin.domain.Admin;
+import com.orgz.base.BaseAction;
+import com.orgz.domain.Society;
+import com.orgz.domain.User;
+
+@Controller
+@Scope("prototype")
+public class AdminAction extends BaseAction {
+	private static final long serialVersionUID = 1L;
+	private Admin admin;
+	private int adminId;
+	private String oldPassword;
+	private String newPassword;
+	private String rnewPassword;
+	
+
+	protected Map<String, Object> sessionMap = ActionContext.getContext().getSession();
+	protected HttpServletRequest request = ServletActionContext.getRequest(); 
+	
+	public String login() throws Exception {
+		Admin a = null;
+		if( admin != null && (admin.getPassword() != null)){
+			String encode = DigestUtils.md5Hex(admin.getPassword());
+			admin.setPassword(encode);
+			if(admin.getAdminName() != null){
+				a = adminService.loginByName(admin);
+			}else if(admin.getPhoneNumber() != null){
+				a = adminService.loginByPhoneNumber(admin);
+			}
+		}
+		if(a != null){
+			sessionMap.put("admin", a);
+			return "success";
+		}else{
+			request.setAttribute("msg", "用户名或密码错误");
+			return "toLogin";
+		}
+	}
+	
+	public String editpwd() throws Exception {
+		if(adminId > 0 && oldPassword != null && newPassword != null && rnewPassword != null && newPassword.compareTo(rnewPassword)== 0 ){
+			String encodeOldpassword = DigestUtils.md5Hex(oldPassword);
+			String encodeNewpassword = DigestUtils.md5Hex(newPassword);
+			Admin data = new Admin();
+			data.setAdminId(adminId);
+			data.setPassword(encodeOldpassword);
+			admin = adminService.getByIdAndPassword(data);
+			if(admin == null){
+				dataMap.put("statusCode", "300");
+				dataMap.put("message", "操作失败");
+			}else{
+				admin.setPassword(encodeNewpassword);
+				adminService.editPassword(admin);
+				admin.getUser().setPassword(encodeNewpassword);
+				userService.updateUser(admin.getUser());
+				sessionMap.put("admin", admin);
+				dataMap.put("statusCode", "200");
+				dataMap.put("message", "操作成功");
+			}
+		}else{
+			dataMap.put("statusCode", "300");
+			dataMap.put("message", "操作失败");
+		}
+		
+		dataMap.put("navTabId", "");
+		dataMap.put("rel", "");
+		dataMap.put("callbackType", "closeCurrent");
+		dataMap.put("forwardUrl", "");
+		return "jsonResult";
+	}
+	
+	public String add() throws Exception {
+		if(admin != null &&  newPassword != null && rnewPassword != null && newPassword.compareTo(rnewPassword)== 0){
+			String encode = DigestUtils.md5Hex(newPassword);
+			admin.setPassword(encode);
+			Admin a = null;
+			if(admin.getAdminName() != null) {
+				a = adminService.loginByName(admin);
+			}
+			if(a == null && admin.getPhoneNumber() != null) {
+				a = adminService.loginByPhoneNumber(admin);
+			}
+			//表示该用户名与电话号码没被注册
+			if(a == null) {
+				//构造User
+				User user = new User();
+				user.setUserName("管理员"+admin.getAdminName());
+				user.setPassword(encode);
+				user.setSex(-1);
+				
+				//添加用户
+				userService.insertUser(user);
+				//构造社团
+				Society society = new Society();
+				society.setSocietyName("管理员社团");
+				society.setFounder(user);
+				//添加社团
+				societyService.createPersonalSociety(society, user);
+				admin.setUser(user);
+				admin.setSociety(society);
+				//添加管理员
+				adminService.addAdmin(admin);
+				dataMap.put("statusCode", "200");
+				dataMap.put("message", "操作成功");
+			}else{
+				dataMap.put("statusCode", "300");
+				dataMap.put("message", "用户名或电话已被注册");
+			}
+		} else{
+			dataMap.put("statusCode", "300");
+			dataMap.put("message", "操作失败");
+		}
+		dataMap.put("navTabId", "adminList");
+		dataMap.put("rel", "adminList");
+		dataMap.put("callbackType", "closeCurrent");
+		dataMap.put("forwardUrl", "");
+		return "jsonResult";
+	}
+	
+	public String quit() throws Exception {
+		sessionMap.clear();
+		return "toLogin";
+	}
+	
+	public String list() throws Exception {
+		admin = (Admin) sessionMap.get("admin");
+		if(admin.getAdminName().compareTo("admin") == 0){
+			System.out.println(admin.getAdminName());
+			pages = adminService.getPageBean();
+		}
+		
+		return "list";
+	}
+	
+	public String delete() throws Exception {
+		admin = (Admin) sessionMap.get("admin");
+		if(adminId >0 && admin.getAdminName().compareTo("admin") == 0){
+			adminService.deleteById(adminId);
+			dataMap.put("statusCode", "200");
+			dataMap.put("message", "操作成功");
+			dataMap.put("rel", "adminList");
+			dataMap.put("navTabId", "adminList");
+		}else{
+			dataMap.put("statusCode", "300");
+			dataMap.put("message", "操作失败");
+		}
+		return "jsonResult";
+	}
+	
+	public String addUI() throws Exception {
+		
+		return "addUI";
+	}
+	
+	public String editpwdUI() throws Exception{
+		return "editpwdUI";
+	}
+	
+
+	public Admin getAdmin() {
+		return admin;
+	}
+
+	public void setAdmin(Admin admin) {
+		this.admin = admin;
+	}
+
+	public Map<String, Object> getDataMap() {
+		return dataMap;
+	}
+
+	public void setDataMap(Map<String, Object> dataMap) {
+		this.dataMap = dataMap;
+	}
+	
+	public int getAdminId() {
+		return adminId;
+	}
+
+	public void setAdminId(int adminId) {
+		this.adminId = adminId;
+	}
+
+	public String getOldPassword() {
+		return oldPassword;
+	}
+
+	public void setOldPassword(String oldPassword) {
+		this.oldPassword = oldPassword;
+	}
+
+	public String getNewPassword() {
+		return newPassword;
+	}
+
+	public void setNewPassword(String newPassword) {
+		this.newPassword = newPassword;
+	}
+
+	public String getRnewPassword() {
+		return rnewPassword;
+	}
+
+	public void setRnewPassword(String rnewPassword) {
+		this.rnewPassword = rnewPassword;
+	}
+}

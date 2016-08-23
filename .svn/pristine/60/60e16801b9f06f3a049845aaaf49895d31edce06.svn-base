@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.orgz.dao.VersionMapper">
+	<resultMap type="com.orgz.domain.Version" id="versionMap">
+		<id property="versionId" column="version_id"/>
+		<result property="publishTime" column="publish_time"/>
+		<result property="romUrl" column="rom_url"/>
+		<result property="versionSign" column="version_sign"/>
+		<result property="versionNumber" column="version_number"/>
+	</resultMap>
+	
+	<select id="checkLatestVersion" resultMap="versionMap">
+		select * from version order by version_id DESC LIMIT 0, 1
+	</select>
+	<select id="findAll" resultMap="versionMap">
+		select * from version order by version_id desc
+	</select>
+	
+	<insert id="insertVersion" parameterType="com.orgz.domain.Version" useGeneratedKeys="true" keyProperty="versionId">
+		insert into version(rom_url, version_sign, version_number) values(#{romUrl}, #{versionSign}, #{versionNumber})
+	</insert>
+</mapper>

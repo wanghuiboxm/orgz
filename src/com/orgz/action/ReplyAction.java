@@ -1,0 +1,207 @@
+package com.orgz.action;
+
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Controller;
+
+import com.opensymphony.xwork2.Action;
+import com.orgz.base.BaseAction;
+import com.orgz.condition.SearchConditionOfReply;
+import com.orgz.domain.Message;
+import com.orgz.domain.Reply;
+
+@Controller
+@Scope("prototype")
+public class ReplyAction extends BaseAction {
+	private static final long serialVersionUID = 1L;
+	
+	private Reply reply;
+	private int userId;
+	private int messageId;
+	private int replyId;
+	private String replyContent;
+	private int parentId;
+	private Message message;
+	private SearchConditionOfReply rc;
+	
+	public String show() throws Exception {
+		if(messageId > 0 && userId > 0) {
+			//表示不分页
+			if(numPerPage == -1 && pageNum == -1) {
+				pageNum = 1;
+				numPerPage = 0;
+			} else {
+				if(numPerPage < 1){
+					//默认每页显示20条
+					numPerPage = 20;
+				}
+				if(pageNum < 1){
+					//默认显示第一页
+					pageNum = 1;
+				}
+			}
+			//如果没有查询条件
+			rc = new SearchConditionOfReply();
+			rc.setMessageId(messageId);
+			rc.setUserId(userId);
+			
+			//根据留言id得到留言
+			message = messageService.getMessageByIdWithCheck(userId, messageId);
+			//准备数据
+			pages = replyService.getPageBean(rc, numPerPage, pageNum);
+			dataMap.put("status", 0);
+			dataMap.put("message", "成功");
+			dataMap.put("result", pages);
+			dataMap.put("target", message);
+		}
+		return Action.SUCCESS;
+	}
+	
+	public String add() throws Exception {
+		if(replyContent != null && userId > 0 && messageId > 0){
+			reply = new Reply();
+			reply.setReplyContent(replyContent);
+			if(parentId > 0) {
+				Reply parent = new Reply();
+				parent.setReplyId(parentId);
+				reply.setParent(parent);
+			}
+			replyService.insertReply(reply, messageId, userId);
+			//更新留言数
+			messageService.updateReplyCount(messageId);
+			
+			dataMap.put("status", 0);
+			dataMap.put("message", "成功");
+		}else{
+			dataMap.put("status", 4);
+			dataMap.put("message", "参数错误");
+		}
+		return Action.SUCCESS;
+	}
+	
+	public String delete() throws Exception {
+		if(replyId > 0 && messageId > 0){
+			reply = replyService.getReplyById(replyId);
+			if(reply != null && reply.getMessage().getMessageId() == messageId) {
+				//如果评论没有被回复则可以删除
+				if(!replyService.isHasReply(replyId)){
+					int count = replyService.deleteByReplyId(replyId);
+					//减少留言数
+					messageService.updateReplyCountReduce(messageId, count);
+					dataMap.put("status", 0);
+					dataMap.put("message", "成功");
+				}else{
+					dataMap.put("status", 1);
+					dataMap.put("message", "该评论不能删除");
+				}
+			}else {
+				dataMap.put("status", 4);
+				dataMap.put("message", "没有该记录");
+			}
+		}else {
+			dataMap.put("status", 4);
+			dataMap.put("message", "参数错误");
+		}
+		return Action.SUCCESS;
+	}
+	
+	//后台方法
+	public String list() throws Exception {
+		if(numPerPage <= 0 ){
+			//默认显示20条记录
+			numPerPage = 20;
+		}
+		if(pageNum <= 0){
+			//默认显示第一页
+			pageNum = 1;
+		}
+		//如果没有查询条件
+		if(rc == null){
+			rc = new SearchConditionOfReply();
+		}
+		message = messageService.getMessageById(rc.getMessageId());
+		//准备数据
+		pages = replyService.getPageBean(rc, numPerPage, pageNum);
+		
+		return "list";
+	}
+	
+	public String deleteByAdmin() throws Exception {
+		if(rc != null && (rc.getReplyId() > 0 || rc.getMessageId() > 0)){
+			int count = replyService.deleteByCondition(rc);
+			//减少留言数
+			messageService.updateReplyCountReduce(rc.getMessageId(), count);
+			dataMap.put("statusCode", "200");
+			dataMap.put("message", "删除成功");
+			dataMap.put("navTabId", "replyList");
+			dataMap.put("rel", "replyList");
+		} else {
+			dataMap.put("statusCode", "300");
+			dataMap.put("message", "操作失败");
+		}
+		return "jsonResult";
+	}
+	
+	public Reply getReply() {
+		return reply;
+	}
+
+	public void setReply(Reply reply) {
+		this.reply = reply;
+	}
+
+	public int getUserId() {
+		return userId;
+	}
+
+	public void setUserId(int userId) {
+		this.userId = userId;
+	}
+
+	public int getMessageId() {
+		return messageId;
+	}
+
+	public void setMessageId(int messageId) {
+		this.messageId = messageId;
+	}
+
+	public int getReplyId() {
+		return replyId;
+	}
+
+	public void setReplyId(int replyId) {
+		this.replyId = replyId;
+	}
+
+	public Message getMessage() {
+		return message;
+	}
+
+	public void setMessage(Message message) {
+		this.message = message;
+	}
+
+	public SearchConditionOfReply getRc() {
+		return rc;
+	}
+
+	public void setRc(SearchConditionOfReply rc) {
+		this.rc = rc;
+	}
+
+	public String getReplyContent() {
+		return replyContent;
+	}
+
+	public void setReplyContent(String replyContent) {
+		this.replyContent = replyContent;
+	}
+
+	public int getParentId() {
+		return parentId;
+	}
+
+	public void setParentId(int parentId) {
+		this.parentId = parentId;
+	}
+}

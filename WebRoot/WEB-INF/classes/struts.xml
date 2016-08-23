@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<!-- 配置为开发模式 -->
+    <constant name="struts.devMode" value="ture" />
+    <!-- 把扩展名配置为action -->
+    <!-- <constant name="struts.action.extension" value="action" /> -->
+    <!-- 把主题配置为simple -->
+    <constant name="struts.ui.theme" value="simple" />
+    <constant name="struts.multipart.maxSize" value="204800000"></constant>
+  
+    <package name="front" namespace="/front" extends="json-default">
+    
+    	<interceptors>
+    		<!-- 声明拦截器 -->
+    		<interceptor name="systemException" class="com.orgz.action.interceptor.MyExceptionInterceptor"></interceptor>
+    		
+    		<!-- 定义拦截器栈 -->
+    		 <interceptor-stack name="myStack">
+    			<interceptor-ref name="systemException"></interceptor-ref>
+    		 	<interceptor-ref name="json"></interceptor-ref>
+    			<interceptor-ref name="fileUpload">
+					<!-- <param name="allowedTypes">image/png,image/gif,image/jpeg,image/pjepg,image/x-png</param> -->
+					<param name="allowedExtensions">png,gif,jpg,jpeg</param>
+					<param name="maximumSize">2048000</param>
+				</interceptor-ref>
+    			<interceptor-ref name="defaultStack"></interceptor-ref>
+    		</interceptor-stack>
+    	</interceptors> 
+		
+		<!-- 指定默认拦截器 --> 
+		<default-interceptor-ref name="myStack"></default-interceptor-ref>
+		
+		<!-- 全局的Result配置 -->
+		<global-results>
+			<result name="systemError" type="redirectAction">errorAction_systemError</result>
+			<result name="pathError" type="redirectAction">errorAction_pathError</result>
+			<result name="jsonResult" type="redirectAction">errorAction_pathError</result>
+			<result name="input" type="redirectAction">errorAction_fileError</result>
+			<result name="paramsError" type="redirectAction">errorAction_paramsError</result>
+		</global-results>
+		 
+		<!-- 处理异常action -->
+		<action name="errorAction_*" class="errorJsonAction" method="{1}">
+			<result type="json">
+				<param name="root">dataMap</param>`
+				<!-- <param name="excludeNullProperties">true</param> -->
+			</result>
+		</action>
+
+    	<!-- 用户 -->
+		<action name="user_*" class="userAction" method="{1}">
+			<result type="json">
+				<param name="root">dataMap</param>
+			</result>
+		</action>
+		
+		<!-- 社团 -->
+		<action name="society_*" class="societyAction" method="{1}">
+			<result type="json">
+				<param name="root">dataMap</param>
+			</result>
+		</action>
+
+		<!-- 活动 -->
+		<action name="activity_*" class="activityAction" method="{1}">
+			<result type="json">
+				<param name="root">dataMap</param>
+			</result>
+		</action>
+		
+		<!-- 活动评论 -->
+		<action name="discuss_*" class="discussAction" method="{1}">
+			<result type="json">
+				<param name="root">dataMap</param>
+			</result>
+		</action>
+		
+		<!-- 留言板 -->
+		<action name="message_*" class="messageAction" method="{1}">
+			<result type="json">
+				<param name="root">dataMap</param>
+			</result>
+		</action>
+		
+		<!-- 留言回复-->
+		<action name="reply_*" class="replyAction" method="{1}">
+			<result type="json">
+				<param name="root">dataMap</param>
+			</result>
+		</action>
+		
+		<!-- 好友 -->
+		<action name="friend_*" class="friendAction" method="{1}">
+			<result type="json">
+				<param name="root">dataMap</param>
+			</result>
+		</action> 
+		
+		<!-- 版本 -->
+		<action name="version_*" class="versionAction" method="{1}">
+			<result type="json">
+				<param name="root">dataMap</param>
+			</result>
+			<result name="version" type="stream">
+				<param name="contentType">application/vnd.android.package-archive</param>
+				<param name="contentDisposition">attachment;filename=${filename}</param>
+				<param name="inputName">targetFile</param>
+			</result>
+		</action>
+    </package>
+    
+	<!-- 管理员 -->
+	<package name="admin" namespace="/admin" extends="front" >
+		<interceptors>
+	    		<!-- 声明拦截器 -->
+	    		<interceptor name="systemException" class="com.orgz.action.interceptor.MyExceptionInterceptor"></interceptor>
+	    		
+	    		<!-- 定义拦截器栈 -->
+	    		 <interceptor-stack name="adminStack">
+	    			<interceptor-ref name="systemException"></interceptor-ref>
+	    		 	<interceptor-ref name="json"></interceptor-ref>
+	    			<interceptor-ref name="defaultStack"></interceptor-ref>
+	    		</interceptor-stack>
+	    </interceptors> 
+	    
+	    <!-- 指定默认拦截器 --> 
+		<default-interceptor-ref name="adminStack"></default-interceptor-ref>
+		
+		<action name="admin_*" class="adminAction" method="{1}">
+			<result name="success">/WEB-INF/jsp/admin/index.jsp</result>
+			<result name="editpwdUI">/WEB-INF/jsp/admin/editpwdUI.jsp</result>
+			<result name="addUI">/WEB-INF/jsp/admin/addUI.jsp</result>
+			<result name="list">/WEB-INF/jsp/admin/list.jsp</result>
+			<result type="json" name="jsonResult"> 
+				<param name="root">dataMap</param>
+				<param name="excludeNullProperties">true</param>
+			</result>
+			<result name="toLogin">/login.jsp</result>
+		</action>
+		<!-- 管理用户 -->
+		<action name="user_*" class="userAction" method="{1}">
+			<result name="list">/WEB-INF/jsp/user/list.jsp</result>
+			<result name="editUI">/WEB-INF/jsp/user/editUI.jsp</result>
+			<result name="detail">/WEB-INF/jsp/user/detail.jsp</result>
+			<result name="jsonResult" type="json">
+				<param name="root">dataMap</param>
+				<param name="excludeNullProperties">false</param>
+			</result>
+		</action>
+		<!-- 管理社团 -->
+		<action name="society_*" class="societyAction" method="{1}">
+			<result name="list">/WEB-INF/jsp/society/list.jsp</result>
+			<result name="checkList">/WEB-INF/jsp/society/checkList.jsp</result>
+			<result name="unCheckList">/WEB-INF/jsp/society/unCheckList.jsp</result>
+			<result name="searchUI">/WEB-INF/jsp/society/searchUI.jsp</result>
+			<result name="editUI">/WEB-INF/jsp/society/editUI.jsp</result>
+			<result name="detail">/WEB-INF/jsp/society/detail.jsp</result>
+			<result name="jsonResult" type="json">
+				<param name="root">dataMap</param>
+			</result>
+		</action>
+		<!-- 管理社团下的活动 -->
+		<action name="activity_*" class="activityAction" method="{1}">
+			<interceptor-ref name="fileUpload">
+				<!-- <param name="allowedTypes">image/png,image/gif,image/jpeg</param> -->
+				<param name="allowedExtensions">png,gif,jpg,jpeg</param>
+				<param name="maximumSize">2048000</param>
+			</interceptor-ref>
+			<interceptor-ref name="adminStack" />
+			<result name="list">/WEB-INF/jsp/activity/list.jsp</result>
+			<result name="addUI">/WEB-INF/jsp/activity/addUI.jsp</result>
+			<result name="input">/login.jsp</result>
+			<result name="jsonResult" type="json">
+				<param name="root">dataMap</param>
+			</result>
+		</action>
+		<!-- 活动评论管理 -->
+		<action name="discuss_*" class="discussAction" method="{1}">
+			<result name="list">/WEB-INF/jsp/discuss/list.jsp</result>
+			<result name="jsonResult" type="json">
+				<param name="root">dataMap</param>
+			</result>
+		</action>
+		<!-- 管理留言板 -->
+		<action name="message_*" class="messageAction" method="{1}">
+			<result name="list">/WEB-INF/jsp/message/list.jsp</result>
+			<result name="jsonResult" type="json">
+				<param name="root">dataMap</param>
+			</result>
+		</action>
+		<action name="reply_*" class="replyAction" method="{1}">
+			<result name="list">/WEB-INF/jsp/reply/list.jsp</result>
+			<result name="jsonResult" type="json">
+				<param name="root">dataMap</param>
+			</result>
+		</action>
+		<action name="version_*" class="versionAction" method="{1}">
+			<interceptor-ref name="fileUpload">
+				<!-- <param name="allowed">apk</param> -->
+				<param name="allowedExtensions">apk</param>
+				<param name="maximumSize">2048000000</param>
+			</interceptor-ref>
+			<interceptor-ref name="adminStack"></interceptor-ref>
+			<result name="list">/WEB-INF/jsp/version/list.jsp</result>
+			<result name="jsonResult" type="json">
+				<param name="root">dataMap</param>
+			</result>
+			<result name="addUI">/WEB-INF/jsp/version/addUI.jsp</result>
+		</action>
+	</package>
+
+</struts>

@@ -1,0 +1,227 @@
+package com.orgz.action;
+
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Controller;
+
+import com.opensymphony.xwork2.Action;
+import com.orgz.base.BaseAction;
+import com.orgz.base.SearchConditionOfDiscuss;
+import com.orgz.domain.Activity;
+import com.orgz.domain.Discuss;
+import com.orgz.domain.User;
+import com.orgz.lbs.service.ActivityGeoService;
+import com.orgz.utils.BeanUtils;
+
+@Controller
+@Scope("prototype")
+public class DiscussAction extends BaseAction {
+	private static final long serialVersionUID = 1L;
+	
+	private Discuss discuss;
+	private int activityId;
+	private SearchConditionOfDiscuss dc;
+	private Activity activity;
+	private int userId;
+	private int discussId;
+	private String discussContent;
+	private int parentId;
+	
+	//根据活动id展示评论
+	public String show() throws Exception {
+		if(activityId > 0 && userId > 0) {
+			//表示不分页
+			if(numPerPage == -1 && pageNum == -1) {
+				pageNum = 1;
+				numPerPage = 0;
+			} else {
+				if(numPerPage < 1){
+					//默认每页显示20条
+					numPerPage = 20;
+				}
+				if(pageNum < 1){
+					//默认显示第一页
+					pageNum = 1;
+				}
+			}
+			//如果没有查询条件
+			dc = new SearchConditionOfDiscuss();
+			dc.setActivityId(activityId);
+	
+			//根据活动id得到活动
+			activity = activityService.getActivityByIdWithCheck(activityId, userId);
+			//准备数据
+			pages = discussService.getPageBean(dc, numPerPage, pageNum);
+			dataMap.put("status", 0);
+			dataMap.put("message", "成功");
+			dataMap.put("result", pages);
+			dataMap.put("target", activity);
+		}else {
+			dataMap.put("status", 4);
+			dataMap.put("message", "参数错误");
+		}
+		return Action.SUCCESS;
+	}
+	
+	//添加评论
+	public String add() throws Exception {
+		if(discussContent != null && userId > 0 && activityId > 0){
+			discuss = new Discuss();
+			discuss.setDiscussContent(discussContent);
+			if(parentId > 0) {
+				Discuss dis = new Discuss();
+				dis.setDiscussId(parentId);
+				discuss.setParent(dis);
+			}
+			discussService.insertDiscuss(discuss, activityId, userId);
+			//增加活动评论数
+			activityService.updateDiscussCount(activityId);
+			//更新lbs
+			activity = activityService.getActivityById(activityId);
+			threadPool.invokeMethod(ActivityGeoService.class, "updateActivityGeo", activity, BeanUtils.copy(activityGeoService));
+			
+			dataMap.put("status", 0);
+			dataMap.put("message", "成功");
+		}else{
+			dataMap.put("status", 4);
+			dataMap.put("message", "参数不正确");
+		}
+		return Action.SUCCESS;
+	}
+	
+	//如果评论没有被回复可以删除
+	public String delete() throws Exception {
+		if(discussId > 0 && activityId > 0){
+			discuss = discussService.findById(discussId);
+			//如果评论没有被回复则可以删除
+			if(discuss != null && discuss.getActivityId() == activityId && !discussService.isHasReply(discussId)){
+				discussService.deleteByDiscussId(discussId);
+				//减少活动评论数
+				activityService.updateDiscussCountReduce(activityId, 1);
+				//更新lbs
+				activity = activityService.getActivityById(activityId);
+				threadPool.invokeMethod(ActivityGeoService.class, "updateActivityGeo", activity, BeanUtils.copy(activityGeoService));
+				
+				dataMap.put("status", 0);
+				dataMap.put("message", "成功");
+			}else{
+				dataMap.put("status", 2);
+				dataMap.put("message", "该评论不能删除");
+			}
+		}else {
+			dataMap.put("status", 4);
+			dataMap.put("message", "参数不正确");
+		}
+		return Action.SUCCESS;
+	}
+	
+	//后台方法
+	public String list() throws Exception {
+		
+		if(numPerPage <= 0 ){
+			//默认显示20条记录
+			numPerPage = 20;
+		}
+		if(pageNum <= 0){
+			//默认显示第一页
+			pageNum = 1;
+		}
+		System.out.println(dc.toString());
+		//如果没有查询条件
+		if(dc == null){
+			dc = new SearchConditionOfDiscuss();
+		}
+		//根据活动id得到活动
+		activity = activityService.getActivityById(dc.getActivityId());
+		//准备数据
+		pages = discussService.getPageBean(dc, numPerPage, pageNum);
+		
+		return "list";
+	}
+	
+	//通过条件删除评论
+	public String deleteByAdmin() throws Exception {
+		if(request.getRequestURI().startsWith("/orgz/admin/") && dc != null && (dc.getActivityId() > 0 || dc.getDiscussId() > 0)){
+			int count = discussService.deleteByCondition(dc);
+			//减少活动评论数
+			activityService.updateDiscussCountReduce(dc.getActivityId(), count);
+			//更新lbs
+			activity = activityService.getActivityById(dc.getActivityId());
+			if(activity != null) {
+				threadPool.invokeMethod(ActivityGeoService.class, "updateActivityGeo", activity, BeanUtils.copy(activityGeoService));
+			}
+			dataMap.put("statusCode", "200");
+			dataMap.put("message", "删除成功");
+			dataMap.put("navTabId", "discussList");
+			dataMap.put("rel", "discussList");
+		} else {
+			dataMap.put("statusCode", "300");
+			dataMap.put("message", "操作失败");
+		}
+		return "jsonResult";
+	}
+	
+	public Discuss getDiscuss() {
+		return discuss;
+	}
+
+	public void setDiscuss(Discuss discuss) {
+		this.discuss = discuss;
+	}
+
+	public int getActivityId() {
+		return activityId;
+	}
+
+	public void setActivityId(int activityId) {
+		this.activityId = activityId;
+	}
+
+	public SearchConditionOfDiscuss getDc() {
+		return dc;
+	}
+
+	public void setDc(SearchConditionOfDiscuss dc) {
+		this.dc = dc;
+	}
+
+	public Activity getActivity() {
+		return activity;
+	}
+
+	public void setActivity(Activity activity) {
+		this.activity = activity;
+	}
+
+	public int getUserId() {
+		return userId;
+	}
+
+	public void setUserId(int userId) {
+		this.userId = userId;
+	}
+
+	public int getDiscussId() {
+		return discussId;
+	}
+
+	public void setDiscussId(int discussId) {
+		this.discussId = discussId;
+	}
+
+	public String getDiscussContent() {
+		return discussContent;
+	}
+
+	public void setDiscussContent(String discussContent) {
+		this.discussContent = discussContent;
+	}
+
+	public int getParentId() {
+		return parentId;
+	}
+
+	public void setParentId(int parentId) {
+		this.parentId = parentId;
+	}
+
+}

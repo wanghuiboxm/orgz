@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.orgz.dao.DiscussMapper">
+	<resultMap type="com.orgz.domain.Discuss" id="discussMap">
+		<id property="discussId" column="discuss_id" />
+		<result property="discussTitle" column="discuss_title" />
+		<result property="discussContent" column="discuss_content" />
+		<result property="discussTime" column="discuss_time" />
+		<result property="activityId" column="activity_id" />
+		<association property="parent" javaType="com.orgz.domain.Discuss">
+			<id property="discussId" column="parent_id" />
+			<result property="discussTitle" column="parent_title" />
+			<result property="discussContent" column="parent_content" />
+			<result property="discussTime" column="parent_time" />
+			<association property="user" javaType="com.orgz.domain.User" column="parent_user_id" select="selectUserById" ></association>
+		</association>
+		<association property="user" javaType="com.orgz.domain.User">
+			<id property="userId" column="user_id" />
+			<result property="userName" column="user_name" />
+			<result property="userIcon" column="user_icon"/>
+		</association>
+	</resultMap>
+	<resultMap type="com.orgz.domain.User" id="discussUserMap">
+		<id property="userId" column="user_id" />
+		<result property="userName" column="user_name" />
+		<result property="userIcon" column="user_icon"/>
+	</resultMap>
+
+	<select id="selectUserById" parameterType="int" resultMap="discussUserMap">
+		select user_id, user_name, user_icon from user where user_id = #{id}
+	</select>
+
+	<select id="listDiscuss" parameterType="com.orgz.base.SearchConditionOfDiscuss"
+		resultMap="discussMap">
+		SELECT
+		dis.discuss_id,dis.discuss_content,dis.discuss_time,dis.activity_id,dis.user_id,dis.parent_id,dis.discuss_title,
+		parent.discuss_content AS parent_content,parent.discuss_time AS parent_time,parent.user_id AS parent_user_id,
+		u.user_name,u.user_icon
+		from discuss dis LEFT JOIN discuss parent ON dis.parent_id =parent.discuss_id INNER JOIN user u ON dis.user_id = u.user_id 
+		where dis.activity_id = #{activityId } ORDER BY dis.discuss_time
+		<if test="start >= 0 and size >= 1">
+		limit #{start},#{size}
+		</if>
+	</select>
+	<select id="selectById" parameterType="int" resultMap="discussMap">
+		select * from discuss where discuss_id = #{id}
+	</select>
+	<select id="discussCount" parameterType="com.orgz.base.SearchConditionOfDiscuss" resultMap="discussMap">
+		select * from discuss 
+		<where>
+			<if test="activityId >= 0">
+			activity_id = #{activityId}
+			</if>
+		</where>
+	</select>
+	<select id="isHasReply" parameterType="int" resultType="int">
+		select count(*) from discuss where parent_id = #{id}
+	</select>
+	<insert id="insertDiscuss" parameterType="com.orgz.domain.Discuss" useGeneratedKeys="true" keyProperty="discussId">
+		insert into discuss(discuss_content, discuss_time, activity_id, parent_id, user_id) values(#{discussContent }, CURRENT_TIMESTAMP, #{activityId }, #{parent.discussId }, #{user.userId })
+	</insert>
+	
+	<!-- 根据条件删除评论 -->
+	<delete id="deleteDiscuss" parameterType="com.orgz.base.SearchConditionOfDiscuss">
+		delete from discuss where 
+		<choose>
+			<when test="discussId > 0">
+				discuss_id = #{discussId} or parent_id = #{discussId}
+			</when>
+			<otherwise>
+				activity_id = #{activityId}
+			</otherwise>
+		</choose>
+	</delete>
+</mapper>

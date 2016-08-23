@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.orgz.dao.FriendMapper">
+	<resultMap type="com.orgz.domain.Friend" id="friendMap">
+		<id property="friendId" column="friend_id"/>
+		<result property="addTime" column="add_time"/>
+		<result property="nickname" column="nickname"/>
+		<result property="userId" column="user_id"/>
+		<result property="friendUserId" column="friend_user_id"/>
+		<result property="friendIcon" column="user_icon"/>
+		<result property="friendName" column="user_name"/>
+	</resultMap>
+	
+	<select id="selectByUserId" parameterType="int" resultMap="friendMap">
+		select f.*, u.user_name, u.user_icon from friend f INNER JOIN user u ON f.friend_user_id = u.user_id  where f.user_id=#{id}
+	</select>
+	
+	<select id="selectById" parameterType="int" resultMap="friendMap">
+		select f.*, u.user_name, u.user_icon from friend f INNER JOIN user u ON f.friend_user_id = u.user_id  where f.friend_id = #{id} 
+	</select>
+	
+	<select id="selectByFriendUserIdAndUserId" parameterType="com.orgz.domain.Friend" resultMap="friendMap">
+		select f.*, u.user_name, u.user_icon from friend f INNER JOIN user u ON f.friend_user_id = u.user_id  where f.friend_user_id = #{friendUserId} and f.user_id = #{userId}
+	</select>
+	
+	<update id="updateFriend" parameterType="com.orgz.domain.Friend">
+		update friend set nickname = #{nickname} where user_id=#{userId} and friend_user_id=#{friendUserId}
+	</update>
+	
+	<insert id="insert" parameterType="com.orgz.domain.Friend" useGeneratedKeys="true" keyProperty="friendId">
+		insert into friend(nickname, user_id, friend_user_id) values( #{nickname}, #{userId}, #{friendUserId})
+	</insert>
+	
+	<delete id="deleteFriend" parameterType="com.orgz.domain.Friend">
+		delete from friend where user_id=#{userId} and friend_user_id=#{friendUserId}
+	</delete>
+</mapper>

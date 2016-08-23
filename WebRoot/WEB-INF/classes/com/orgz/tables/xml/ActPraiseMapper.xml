@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.orgz.dao.ActPraiseMapper">
+	<resultMap type="com.orgz.domain.ActPraise" id="actpraiseMap">
+		<id property="actpraiseId" column="actpraise_id"/>
+		<result property="actpraiseTime" column="actpraise_time"/>
+		<association property="User" javaType="com.orgz.domain.User">
+			<id property="userId" column="user_id"/>
+			<result property="userName" column="user_name"/>
+		</association>
+		<association property="activity" javaType="com.orgz.domain.Activity">
+			<id property="activityId" column="activity_id"/>
+		</association>
+	</resultMap>
+
+	<insert id="insertActpraise" parameterType="com.orgz.domain.ActPraise" useGeneratedKeys="true" keyProperty="actpraiseId">
+		insert into actpraise(user_id, activity_id) values(#{user.userId}, #{activity.activityId})
+	</insert>
+	
+	<delete id="deleteByActivityId" parameterType="int">
+		delete from actpraise where activity_id = #{id}
+	</delete>
+	
+	<delete id="deleteByUserIdAndActivityId" parameterType="hashmap">
+		delete from actpraise where user_id = #{userId} and activity_id = #{activityId} 
+	</delete>
+	
+	<select id="selectByUserIdAndActivityId" parameterType="hashmap" resultMap="actpraiseMap">
+		select * from actpraise where user_id = #{userId} and activity_id = #{activityId} 
+	</select>
+</mapper>

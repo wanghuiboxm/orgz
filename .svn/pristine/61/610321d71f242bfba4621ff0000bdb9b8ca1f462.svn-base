@@ -1,0 +1,33 @@
+package com.orgz.service;
+
+import javax.annotation.Resource;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import com.orgz.condition.SearchConditionOfActivity;
+import com.orgz.domain.ActPraise;
+import com.orgz.domain.Activity;
+import com.orgz.domain.PageBean;
+import com.orgz.domain.User;
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations={ "classpath:applicationContext.xml"})
+public class ActpraiseServiceTest {
+	@Resource
+	ActpraiseService actpraiseService;
+	
+	@Test
+	public void test(){
+		Activity act = new Activity();
+		act.setActivityId(4085);
+		User user = new User();
+		user.setUserId(6);
+		ActPraise actpraise = new ActPraise(act, user);
+//		int result = actpraiseService.insert(6, 4085);
+		int result = actpraiseService.deleteByActivityId(4093);
+		System.out.println(result);
+	}
+}

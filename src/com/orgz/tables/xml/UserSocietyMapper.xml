@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.orgz.dao.UserSocietyMapper">
+	<resultMap type="com.orgz.domain.UserSociety" id="userSocietyMap">
+		<result property="userId"  column="user_id"/>
+		<result property="societyId" column="society_id"/>
+		<result property="jionReason" column="jion_reason"/>
+		<result property="property" column="property"/>
+	</resultMap>
+	<insert id="insertUserSociety" parameterType="com.orgz.domain.UserSociety" >
+		insert into user_society(user_id, society_id, jion_reason, property) values(#{userId}, #{societyId}, #{jionReason}, #{property})
+	</insert>
+	
+	<select id="selectByUserIdAndSocietyId" parameterType="com.orgz.domain.UserSociety" resultMap="userSocietyMap">
+		select * from user_society where user_id = #{userId} and society_id = #{societyId}
+	</select>
+	<delete id="deleteByUserIdAndSocietyId" parameterType="com.orgz.domain.UserSociety">
+		delete from user_society where user_id = #{userId} and society_id = #{societyId}
+	</delete>
+</mapper>

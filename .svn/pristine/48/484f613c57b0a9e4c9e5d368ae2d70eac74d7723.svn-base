@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	<mapper namespace="com.orgz.dao.UserActivityStoreMapper">
+		<resultMap type="com.orgz.domain.UserActivityStore" id="userActivityStore">
+		<result property="userId" column="user_id" />
+		<result property="activityId" column="activity_id" />
+		<result property="storeTime" column="store_time" />
+	</resultMap>
+	
+	<insert id="insertUserActivityStore" parameterType="com.orgz.domain.UserActivityStore">
+		insert into user_activity_store(user_id, activity_id) values(#{userId}, #{activityId})
+	</insert>
+	
+	<delete id="deleteByActivityId" parameterType="int">
+		delete from user_activity_store where activity_id = #{id}
+	</delete>
+	
+	<delete id="deleteByActivityIdAndUserId" parameterType="hashmap">
+		delete from user_activity_store where activity_id = #{activityId} and user_id = #{userId }
+	</delete>
+	
+	<select id="selectByUserIdAndActivityId" parameterType="hashmap" resultMap="userActivityStore">
+		select * from user_activity_store where user_id = #{userId} and activity_id = #{activityId}
+	</select>
+</mapper>

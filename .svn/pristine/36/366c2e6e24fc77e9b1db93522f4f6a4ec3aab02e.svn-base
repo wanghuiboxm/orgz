@@ -1,0 +1,66 @@
+package com.orgz.condition;
+
+public class SearchConditionOfActivity {
+	private int start; 
+	private int size;
+	private int societyId;
+	private int activityId;
+	private int userId;
+	
+	
+	public SearchConditionOfActivity() {
+	}
+
+	public SearchConditionOfActivity(int start, int size, int societyId) {
+		super();
+		this.start = start;
+		this.size = size;
+		this.societyId = societyId;
+	}
+
+	@Override
+	public String toString() {
+		return "SearchConditionOfActivity [start=" + start + ", size=" + size
+				+ ", societyId=" + societyId + "]";
+	}
+
+	public int getStart() {
+		return start;
+	}
+
+	public void setStart(int start) {
+		this.start = start;
+	}
+
+	public int getSize() {
+		return size;
+	}
+
+	public void setSize(int size) {
+		this.size = size;
+	}
+
+	public int getSocietyId() {
+		return societyId;
+	}
+
+	public void setSocietyId(int societyId) {
+		this.societyId = societyId;
+	}
+
+	public int getActivityId() {
+		return activityId;
+	}
+
+	public void setActivityId(int activityId) {
+		this.activityId = activityId;
+	}
+
+	public int getUserId() {
+		return userId;
+	}
+
+	public void setUserId(int userId) {
+		this.userId = userId;
+	}
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-module
+  type="WEB"
+  name="orgz"
+  id="myeclipse.1428297508697"
+  context-root="/orgz"
+  j2ee-spec="6.0"
+  archive="orgz.war">
+  <attributes>
+    <attribute name="webrootdir" value="WebRoot" />
+  </attributes>
+</project-module>
+

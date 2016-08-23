@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.orgz.admin.dao.AdminMapper">
+	<resultMap type="com.orgz.admin.domain.Admin" id="adminMap">
+		<id property="adminId" column="admin_id"/>
+		<result property="adminName" column="admin_name"/>
+		<result property="password" column="password"/>
+		<result property="phoneNumber" column="phone_number"/>
+		<result property="email" column="email"/>
+		<result property="addTime" column="add_time"/>
+		<association property="user" javaType="com.orgz.domain.User">
+			<id property="userId" column="user_id"/>
+			<result property="userName" column="user_name"/>
+		</association>
+		<association property="society" javaType="com.orgz.domain.Society">
+			<id property="societyId" column="society_id"/>
+			<result property="societyName" column="society_name"/>
+		</association>
+	</resultMap>
+	
+	<select id="selectByName" parameterType="com.orgz.admin.domain.Admin" resultMap="adminMap">
+		select a.*, u.user_name, s.society_name from (admin a LEFT JOIN user u ON a.user_id = u.user_id) LEFT JOIN society s ON s.society_id = a.society_id where a.admin_name = #{adminName} and a.password = #{password}
+	</select>
+	<select id="listAdmin" resultMap="adminMap">
+		select a.*, u.user_name, s.society_name from (admin a LEFT JOIN user u ON a.user_id = u.user_id) LEFT JOIN society s ON s.society_id = a.society_id where admin_name != "admin"
+	</select>
+	<select id="selectByPhoneNumber" parameterType="com.orgz.admin.domain.Admin" resultMap="adminMap">
+		select a.*, u.user_name, s.society_name from (admin a LEFT JOIN user u ON a.user_id = u.user_id) LEFT JOIN society s ON s.society_id = a.society_id where a.phone_number = #{phoneNumber} and a.password = #{password}
+	</select>
+	
+	<select id="selectByIdAndPassword" parameterType="com.orgz.admin.domain.Admin" resultMap="adminMap">
+		select a.*, u.user_name, s.society_name from (admin a LEFT JOIN user u ON a.user_id = u.user_id) LEFT JOIN society s ON s.society_id = a.society_id where a.admin_id = #{adminId} and a.password = #{password}
+	</select>
+	
+	<select id="selectById" parameterType="int" resultMap="adminMap">
+		select a.*, u.user_name, s.society_name from (admin a LEFT JOIN user u ON a.user_id = u.user_id) LEFT JOIN society s ON s.society_id = a.society_id where a.admin_id = #{adminId}
+	</select>
+	
+	<update id="updatePassword" parameterType="com.orgz.admin.domain.Admin" >
+		update admin set password = #{password} where admin_id = #{adminId}
+	</update>
+	
+	<insert id="insertAdmin" parameterType="com.orgz.admin.domain.Admin" useGeneratedKeys="true" keyProperty="adminId">
+		insert into admin(admin_name, password, phone_number, email, user_id, society_id) values(#{adminName}, #{password}, #{phoneNumber}, #{email}, #{user.userId}, #{society.societyId})
+	</insert>
+	
+	<delete id="deleteById" parameterType="int">
+		delete from admin where admin_name != "admin" and admin_id = #{id}
+	</delete>
+</mapper>

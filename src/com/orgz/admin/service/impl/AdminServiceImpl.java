@@ -1,0 +1,70 @@
+package com.orgz.admin.service.impl;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.orgz.admin.dao.AdminDao;
+import com.orgz.admin.domain.Admin;
+import com.orgz.admin.service.AdminService;
+import com.orgz.domain.PageBean;
+
+@Service
+@Transactional
+public class AdminServiceImpl implements AdminService {
+	@Resource
+	AdminDao adminDao;
+	
+	@Override
+	public Admin loginByName(Admin admin) {
+		Admin result = adminDao.selectByName(admin);
+		return result;
+	}
+
+	@Override
+	public Admin loginByPhoneNumber(Admin admin) {
+		return adminDao.selectByPhoneNumber(admin);
+	}
+
+	@Override
+	public int editPassword(Admin admin) {
+		return adminDao.editPassword(admin);
+	}
+
+	@Override
+	public Admin getById(int adminId) {
+		return adminDao.selectById(adminId);
+	}
+
+	@Override
+	public int addAdmin(Admin admin) {
+		return adminDao.insertAdmin(admin);
+	}
+
+	@Override
+	public int deleteById(int adminId) {
+		return adminDao.deleteById(adminId);
+	}
+
+	@Override
+	public PageBean getPageBean() {
+		PageBean pages = new PageBean();
+		List recordList = adminDao.listAdmin();
+		int recordCount = recordList.size();
+		pages.setCurrentPage(1);
+		pages.setPageSize(20);
+		pages.setRecordCount(recordCount);
+		pages.setRecordList(recordList);
+		return pages;
+	}
+
+	@Override
+	public Admin getByIdAndPassword(Admin admin) {
+		return adminDao.selectByIdAndPassword(admin);
+	}
+
+
+}

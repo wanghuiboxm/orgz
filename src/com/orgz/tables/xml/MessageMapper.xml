@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.orgz.dao.MessageMapper">
+	<resultMap type="com.orgz.domain.Message" id="messageMap">
+		<id property="messageId" column="message_id"/>
+		<result property="messageContent" column="message_content"/>
+		<result property="publishTime" column="publish_time"/>
+		<result property="replyCount" column="reply_count"/>
+		<result property="messageLikebutton" column="message_likebutton"/>
+		<result property="likeFlag" column="like_flag"/>
+		<association property="user" javaType="com.orgz.domain.User">
+			<id property="userId" column="user_id"/>
+			<result property="userName" column="user_name"/>
+			<result property="userIcon" column="user_icon"/>
+		</association>
+	</resultMap>
+	
+	<select id="selectMessageById" parameterType="int" resultMap="messageMap">
+		select mes.*, u.user_name,u.user_icon from message mes, user u where mes.user_id = u.user_id and message_id = #{id}
+	</select>
+	<select id="selectMessageByIdWithCheck" parameterType="hashmap" resultMap="messageMap">
+		SELECT
+			mes.*, u.user_name,u.user_icon,
+			mesp.user_id AS like_flag
+		FROM
+			(message mes, user u)
+		LEFT JOIN mespraise mesp ON mesp.message_id = mes.message_id
+		AND mesp.user_id = #{userId}
+		WHERE
+			mes.user_id = u.user_id
+		AND mes.message_id = #{messageId}
+	</select>
+	<!-- 通过条件查找留言 -->
+	<select id="listMessage" parameterType="com.orgz.condition.SearchConditionOfMessage" resultMap="messageMap">
+		SELECT
+			mes.*, u.user_name,u.user_icon,
+			mesp.user_id AS like_flag
+		FROM
+			message mes LEFT JOIN user u ON mes.user_id = u.user_id
+		LEFT JOIN mespraise mesp ON mesp.message_id = mes.message_id
+		AND mesp.user_id = #{checkUserId}
+		where 1=1
+		<if test="messageId > 0">
+			and mes.message_id = #{messageId}
+		</if>
+		<if test="userId > 0">
+			and mes.user_id = #{userId}
+		</if>
+		order by mes.message_id DESC
+		<if test="start >= 0 and size > 0">
+		limit #{start},#{size}
+		</if>
+	</select>
+	<!-- 通过条件查找留言数 -->
+	<select id="messageCount" parameterType="com.orgz.condition.SearchConditionOfMessage" resultType="int">
+		select count(*) from message
+		where 1=1
+		<if test="messageId > 0">
+			and message_id = #{messageId}
+		</if>
+		<if test="userId > 0">
+			and user_id = #{userId}
+		</if>
+	</select>
+	<insert id="insertMessage" parameterType="com.orgz.domain.Message" useGeneratedKeys="true" keyProperty="messageId">
+		insert into message(message_content, publish_time, reply_count,message_likebutton,user_id) values(#{messageContent},CURRENT_TIMESTAMP,0,0,#{user.userId})
+	</insert>
+	
+	<delete id="deleteMessage" parameterType="com.orgz.domain.Message">
+		delete from message where message_id = #{messageId} and user_id = #{user.userId}
+	</delete>
+	
+	<update id="updateReplyCount" parameterType="int">
+		update message set reply_count = (reply_count + 1) where message_id = #{id}
+	</update>
+	<update id="updateReplyCountReduce" parameterType="hashmap">
+		update message set reply_count = (reply_count - #{count}) where message_id = #{messageId}
+	</update>
+	<update id="updateLikebutton" parameterType="int">
+		update message set message_likebutton = (message_likebutton + 1) where message_id = #{id}
+	</update>
+	<update id="updateLikebuttonReduce" parameterType="int">
+		update message set message_likebutton = (message_likebutton - 1) where message_id = #{id}
+	</update>
+</mapper>

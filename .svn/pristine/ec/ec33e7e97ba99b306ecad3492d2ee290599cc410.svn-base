@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.orgz.dao.ActivityMapper">
+	<resultMap type="com.orgz.domain.Activity" id="activityMap">
+		<result property="activityId" column="activity_id"/>
+		<result property="title" column="title"/>
+		<result property="activityContent" column="activity_content" />
+		<result property="startTime" column="start_time"/>
+		<result property="endTime" column="end_time"/>
+		<result property="discussCount" column="discuss_count"/>
+		<result property="activityLikebutton" column="activity_likebutton"/>
+		<result property="activityPhoto" column="activity_photo" />
+		<result property="publishTime" column="publish_time"/>
+		<result property="province" column="province" />
+		<result property="city" column="city" />
+		<result property="district" column="district" />
+		<result property="address" column="address" />
+		<result property="storeFlag" column="store_flag"/>
+		<result property="likeFlag" column="like_flag"/>
+		<association property="founder" javaType="com.orgz.domain.User">
+			<id property="userId" column="user_id" />
+			<result property="userName" column="user_name" />
+			<result property="email" column="email" />
+			<result property="phoneNumber" column="phone_number" />
+			<result property="userSign" column="user_sign" />
+			<result property="sex" column="sex" />
+			<result property="userIcon" column="user_icon" />
+			<!-- <result property="regtime" column="regtime" />
+			<result property="latelyTime" column="lately_time" /> -->
+		</association>
+		<association property="society" javaType="com.orgz.domain.Society">
+			<id property="societyId" column="society_id" />
+			<result property="societyName" column="society_name" />
+			<result property="societyIcon" column="society_icon" />
+			<result property="property" column="property" />
+			<result property="introduce" column="introduce" />
+			<result property="createTime" column="create_time" />
+			<result property="activityCount" column="activity_count" />
+			<result property="status" column="status" />
+			<result property="school" column="school" />
+			<result property="peopleCount" column="people_count" />
+			
+			<result property="tags" column="tags" />
+		</association>
+	</resultMap>
+	
+	<!-- 通过条件查找社团下的活动 -->
+	<select id="listActivity" parameterType="com.orgz.condition.SearchConditionOfActivity" resultMap="activityMap">
+		SELECT
+			act.*, u.user_name,
+			u.email,
+			u.phone_number,
+			u.user_icon,
+			u.user_sign,
+			u.sex,
+			soc.society_name,
+			soc.property,
+			soc.introduce,
+			soc.create_time,
+			soc.activity_count,
+			soc.`status`,
+			soc.school,
+			soc.people_count,
+			uas.user_id AS store_flag,
+			actp.user_id AS like_flag
+		FROM
+			(
+				activity act,
+				user u,
+				society soc
+			)
+		LEFT JOIN user_activity_store uas ON uas.activity_id = act.activity_id
+		AND uas.user_id = #{userId}
+		LEFT JOIN actpraise actp ON actp.activity_id = act.activity_id
+		AND actp.user_id = #{userId}
+		WHERE
+			act.user_id = u.user_id
+		AND soc.society_id = act.society_id
+		<if test="societyId >= 0">
+			and act.society_id = #{societyId}
+		</if>
+		order by act.start_time desc, act.end_time desc
+		<if test="start >= 0 and size > 0">
+		limit #{start},#{size}
+		</if>
+	</select>
+	<!-- 通过活动id查找活动 -->
+	<select id="selectById" parameterType="hashmap" resultMap="activityMap">
+		SELECT
+			act.*, u.user_name,
+			u.email,
+			u.phone_number,
+			u.user_icon,
+			u.user_sign,
+			u.sex,
+			soc.society_name,
+			soc.property,
+			soc.introduce,
+			soc.create_time,
+			soc.activity_count,
+			soc.`status`,
+			soc.school,
+			soc.people_count,
+			uas.user_id AS store_flag,
+			actp.user_id AS like_flag
+		FROM
+			(
+				activity act,
+				user u,
+				society soc
+			)
+		LEFT JOIN user_activity_store uas ON uas.activity_id = act.activity_id
+		AND uas.user_id = #{userId}
+		LEFT JOIN actpraise actp ON actp.activity_id = act.activity_id
+		AND actp.user_id = #{userId}
+		WHERE
+			act.user_id = u.user_id
+		AND soc.society_id = act.society_id
+		AND act.activity_id = #{activityId}
+	</select>
+	<!-- 通过条件查找活动数 -->
+	<select id="activityCount" parameterType="com.orgz.condition.SearchConditionOfActivity" resultType="int">
+		select count(*) from activity 
+		<where>
+			<if test="societyId >= 0">
+			society_id = #{societyId}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 查找用户收藏的活动 -->
+	<select id="listStoreByUserId" parameterType="int" resultMap="activityMap">
+		select act.*, u.user_name from activity act, user_activity_store uas, user u 
+		where 
+		act.activity_id = uas.activity_id 
+		and act.user_id = u.user_id 
+		and uas.user_id = #{id}
+	</select>
+	
+	<insert id="insertActivity" parameterType="com.orgz.domain.Activity" useGeneratedKeys="true" keyProperty="activityId">
+		insert into activity(title, activity_content, start_time, end_time, discuss_count,activity_likebutton,society_id,user_id,activity_photo,province,city,district,address) 
+		values(#{title}, #{activityContent},#{startTime},#{endTime},#{discussCount},#{activityLikebutton},#{society.societyId},#{founder.userId},#{activityPhoto},#{province},#{city},#{district},#{address})
+	</insert>
+	<update id="updateLikebutton" parameterType="int">
+		update activity set activity_likebutton = (activity_likebutton + 1) where activity_id = #{id}
+	</update>
+	<update id="updateLikebuttonReduce" parameterType="int">
+		update activity set activity_likebutton = (activity_likebutton - 1) where activity_id = #{id}
+	</update>
+	<update id="updateDiscussCount" parameterType="int">
+		update activity set discuss_count = (discuss_count + 1) where activity_id = #{id}
+	</update>
+	<update id="updateDiscussCountReduce" parameterType="hashmap">
+		update activity set discuss_count = (discuss_count - #{count}) where activity_id = #{activityId}
+	</update>
+	<delete id="deleteActivity" parameterType="com.orgz.condition.SearchConditionOfActivity">
+		delete from activity where activity_id = #{activityId}
+	</delete>
+</mapper>

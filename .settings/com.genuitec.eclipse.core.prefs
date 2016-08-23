@@ -1,0 +1,3 @@
+eclipse.preferences.version=1
+validator.Checked=WebRoot/style,config/struts.xml,WebRoot/WEB-INF/jsp/user/list.jsp,src/com/orgz/tables/xml/SocietyMapper.xml
+validator.Unchecked=
